@@ -5,7 +5,7 @@ download : tzdata/downloaded
 tzdata/downloaded :
 	@echo "Downloading TZ Database"
 	@mkdir -p tzdata/
-	@curl --progress-bar 'https://www.iana.org/time-zones/tzdata-latest.tar.gz' -o tzdata-latest.tar.gz
+	@curl --progress-bar 'https://www.iana.org/time-zones/releases/tzdata2023d.tar.gz' -o tzdata-latest.tar.gz
 	@echo "Extracting TZ Database"
 	@tar -xzf tzdata-latest.tar.gz -C tzdata/ $(relevants)
 	@rm -fr tzdata-latest.tar.gz
