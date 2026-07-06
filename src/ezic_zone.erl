@@ -68,7 +68,7 @@ split_by_name(#zone{name=N}, Zones) ->
 
 
 offset_sec(Zone) ->
-    calendar:time_to_seconds((Zone#zone.gmtoff)#tztime.time).
+    ezic_date:time_to_seconds((Zone#zone.gmtoff)#tztime.time).
 
 
 

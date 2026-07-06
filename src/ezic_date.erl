@@ -17,6 +17,7 @@
      % converters
      , month_to_num/1
      , day_to_num/1
+     , time_to_seconds/1
 
 
      % date math
@@ -175,14 +176,21 @@ add_seconds({Date, {H, M, S}}, Seconds) ->
     error:_ -> erlang:error(baddate, {Date, {H, M, S}})
     end.
 
+%% Lax replacement for calendar:time_to_seconds/1, which since OTP 28 rejects
+%% an hour outside 0..23 with a function_clause. ezic feeds it UTC/DST offsets
+%% (which may be negative, e.g. {-11,0,0}, or >= 24h) and 24:00 wall times, so
+%% compute the seconds directly to preserve the historical behaviour.
+time_to_seconds({H, M, S}) ->
+    H * 3600 + M * 60 + S.
+
 
 
 
 add_offset(Datetime, Offset) ->
     add_offset(Datetime, {0,0,0}, Offset).
 add_offset(Datetime, FromOffset, ToOffset) ->
-    FromSec= calendar:time_to_seconds(FromOffset),
-    ToSec= calendar:time_to_seconds(ToOffset),
+    FromSec= time_to_seconds(FromOffset),
+    ToSec= time_to_seconds(ToOffset),
     add_seconds(Datetime, ToSec -FromSec).
 
 
@@ -200,8 +208,8 @@ all_times({Date, #tztime{time=UTCTime, flag=Flag}}, Offset, DSTOffset)
   when Flag=:=u; Flag=:=g; Flag=:=z ->
     UTCDatetime= {Date, UTCTime},
 
-    OSec= calendar:time_to_seconds(Offset),
-    DSTSec= calendar:time_to_seconds(DSTOffset),
+    OSec= time_to_seconds(Offset),
+    DSTSec= time_to_seconds(DSTOffset),
 
     STDTime= add_seconds(UTCDatetime, OSec),
     WallTime= add_seconds(STDTime, DSTSec),
@@ -213,8 +221,8 @@ all_times({Date, #tztime{time=UTCTime, flag=Flag}}, Offset, DSTOffset)
 all_times({Date, #tztime{time=STDTime, flag=s}}, Offset, DSTOffset) ->
     STDDatetime= {Date, STDTime},
 
-    OSec= calendar:time_to_seconds(Offset),
-    DSTSec= calendar:time_to_seconds(DSTOffset),
+    OSec= time_to_seconds(Offset),
+    DSTSec= time_to_seconds(DSTOffset),
 
     UTCTime= add_seconds(STDDatetime, -1*OSec),
     WallTime= add_seconds(STDDatetime, DSTSec),
@@ -227,8 +235,8 @@ all_times({Date, #tztime{time=WallTime, flag=Flag}}, Offset, DSTOffset)
   when Flag=:=w; Flag=:=undefined ->
     WallDatetime= {Date, WallTime},
 
-    OSec= calendar:time_to_seconds(Offset),
-    DSTSec= calendar:time_to_seconds(DSTOffset),
+    OSec= time_to_seconds(Offset),
+    DSTSec= time_to_seconds(DSTOffset),
 
     STDTime= add_seconds(WallDatetime, -1*DSTSec),
     UTCTime= add_seconds(STDTime, -1*OSec),
