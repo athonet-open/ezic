@@ -369,11 +369,15 @@ add_days_in_month(Days, Date={Y,M,D}) ->
 
 %% subtracts 1 second from a single datetime
 % @todo type checking
-m1s(Date= {{Y,M,D},{HH,MM,SS}})
+m1s({{Y,M,D},{HH,MM,SS}})
   when is_integer(Y), is_integer(M), is_integer(D)
      , is_integer(HH), is_integer(MM), is_integer(SS) ->
 
-    calendar:gregorian_seconds_to_datetime(calendar:datetime_to_gregorian_seconds(Date) - 1);
+    %% Compute the gregorian seconds directly (see add_seconds/2): OTP 28/29
+    %% reject an hour >= 24 in calendar:datetime_to_gregorian_seconds/1, but tz
+    %% rules can carry 24:00 wall times here too.
+    calendar:gregorian_seconds_to_datetime(
+      calendar:date_to_gregorian_days({Y,M,D}) * 86400 + HH * 3600 + MM * 60 + SS - 1);
 
 %% subtracts 1 second from all datetimes
 % @todo type checking
