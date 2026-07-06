@@ -160,13 +160,19 @@ day_to_num(X) ->    erlang:error(badday, X).
 
 
 
-add_seconds(Datetime, Seconds) ->
+add_seconds({Date, {H, M, S}}, Seconds) ->
+    %% Compute the datetime's gregorian seconds manually instead of relying on
+    %% calendar:datetime_to_gregorian_seconds/1. Recent OTP releases (OTP 28/29)
+    %% made that function reject an hour >= 24 with a function_clause, but IANA
+    %% tz rules routinely express transition times as 24:00 (and occasionally
+    %% 25:00). Computing the seconds directly preserves the pre-OTP-28 behaviour
+    %% of treating 24:00 as 00:00 of the following day.
     try
     calendar:gregorian_seconds_to_datetime(
-      calendar:datetime_to_gregorian_seconds(Datetime) + Seconds
+      calendar:date_to_gregorian_days(Date) * 86400 + H * 3600 + M * 60 + S + Seconds
      )
     catch
-    error:_ -> erlang:error(baddate, Datetime)
+    error:_ -> erlang:error(baddate, {Date, {H, M, S}})
     end.
 
 
